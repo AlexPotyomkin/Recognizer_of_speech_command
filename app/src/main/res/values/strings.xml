@@ -1,0 +1,43 @@
+<resources>
+    <string name="app_name">AudioProgect</string>
+    <string name="action_settings">Settings</string>
+    <string-array name="notes">
+        <item>E(ми)2</item>
+        <item>F(фа)2</item>
+        <item>F(фа)2+</item>
+        <item>G(соль)2</item>
+        <item>G(соль)2</item>
+        <item>A(ля)2</item>
+        <item>B(си-)2</item>
+        <item>H(си)2</item>
+        <item>C(до)3</item>
+        <item>C(до)3+</item>
+        <item>D(ре)3</item>
+        <item>D(ре)3+</item>
+        <item>E(ми)3</item>
+        <item>F(фа)3</item>
+        <item>F(фа)3+</item>
+        <item>G(соль)3</item>
+        <item>G(соль)3+</item>
+        <item>A(ля)3</item>
+        <item>B(си-)3</item>
+        <item>H(си)3</item>
+        <item>C(до)4</item>
+        <item>C(до)4+</item>
+        <item>D(ре)4</item>
+        <item>D(ре)4+</item>
+        <item>E(ми)4</item>
+        <item>F(фа)4</item>
+        <item>F(фа)4+</item>
+        <item>G(соль)4</item>
+        <item>G(соль)4+</item>
+        <item>A(ля)4</item>
+        <item>B(си-)4</item>
+        <item>H(си)4</item>
+        <item>C(до)5</item>
+        <item>C(до)5+</item>
+        <item>D(ре)5</item>
+        <item>D(ре)5+</item>
+        <item>E(ми)5</item>
+    </string-array>
+</resources>
