@@ -2,6 +2,37 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#fcffffff">
+    android:orientation="vertical">
+
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <fragment
+            android:name="com.lihoy21gmail.audioprogect.GraphicalPanel2"
+            android:id="@+id/GraphicalPane2"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#fcffffff"
+            android:layout_weight="1"/>
+
+        <fragment
+            android:name="com.lihoy21gmail.audioprogect.GraphicalPanel1"
+            android:id="@+id/GraphicalPanel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#fcffffff"
+            android:layout_weight="1"/>
+
+    </LinearLayout>
+    <fragment
+        android:name="com.lihoy21gmail.audioprogect.ControlPanel"
+        android:id="@+id/ControlPanel"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="#fcffffff"/>
+
 </LinearLayout>

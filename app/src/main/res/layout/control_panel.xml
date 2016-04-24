@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal">
+
+    <Button
+        android:id="@+id/bCalibrate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Калибровка" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <RadioButton
+            android:id="@+id/radioRight"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Направо"
+            android:checked="true"
+            android:layout_marginTop="10dp" />
+        <RadioButton
+            android:id="@+id/radioLeft"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Налево"
+            android:layout_weight="1"
+            android:layout_marginTop="10dp" />
+        <RadioButton
+            android:id="@+id/radioUp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Вверх"
+            android:layout_weight="1"
+            android:layout_marginTop="10dp" />
+        <RadioButton
+            android:id="@+id/radioDown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Вниз"
+            android:layout_weight="1"
+            android:layout_marginTop="10dp" />
+    </RadioGroup>
+</LinearLayout>
