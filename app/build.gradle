@@ -24,5 +24,4 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.1.1'
     compile 'com.jjoe64:graphview:4.0.1'
     //compile project(':GraphView')
-    compile files('libs/achartengine-1.1.0.jar')
 }
