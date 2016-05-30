@@ -1,13 +1,16 @@
 package com.lihoy21gmail.audioprogect;
 
 import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 import android.util.Log;
 
 
@@ -21,28 +24,30 @@ public class MainActivity extends FragmentActivity {
     private AudioRecord audioRecord = null;
     private Model mModel;
 
-    SharedPreferences sPref;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        setContentView(R.layout.main1);
+        //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         mModel = Model.getInstance();
         myBufferSize = mModel.getMyBufferSize();
         sampleRate = mModel.getSampleRate();
         myBuffer = new short[myBufferSize];
-        speechCommandRecognizer = new SpeechCommandRecognizer(sampleRate, myBufferSize);
+        speechCommandRecognizer = new SpeechCommandRecognizer(sampleRate, myBufferSize, getApplicationContext());
         createAudioRecorder();
         Fragment controlPanel = new ControlPanel();
         Fragment graphicalPanel = new GraphicalPanel1();
         speechCommandRecognizer.load_standards(getApplicationContext());
+
+        LoadLevel(2);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: ");
+        /*Log.d(TAG, "onResume: ");
         if (audioRecord == null)
             createAudioRecorder();
         audioRecord.startRecording();
@@ -61,9 +66,7 @@ public class MainActivity extends FragmentActivity {
                 }
             }
         };
-        mThread.start();
-
-
+        mThread.start();*/
     }
 
     private void createAudioRecorder() {
@@ -93,12 +96,20 @@ public class MainActivity extends FragmentActivity {
                         speechCommandRecognizer.setRawSignal(myBuffer);
                         speechCommandRecognizer.word_selection();
                     }
-
                     @Override
                     public void onMarkerReached(AudioRecord recorder) {
                     }
                 }
         );
+    }
+
+    void LoadLevel(int lvl){
+        GameWorldFragment gameWorldFragment = GameWorldFragment.newInstance(lvl);
+        //gameWorldFragment.setArguments(lvl);
+        getFragmentManager().
+                beginTransaction().
+                replace(android.R.id.content, gameWorldFragment).
+                commit();
     }
 
     @Override

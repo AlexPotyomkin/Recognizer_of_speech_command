@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,22 +16,24 @@ public class SpeechCommandRecognizer {
     private int sampleRate;
     private boolean incomplete = false;
     private int M = 40;
-    private int divison_of_parts = 10;
-    private double fl = 100;
-    private double fh = 4000;
+    private int divison_of_parts = 6;
+    private double fl = 90;
+    private double fh = 5000;
     private short rawSignal[];
     private double array_of_MFCC[][] = new double[divison_of_parts][M];
-    List<double[][]> array_of_Command = new ArrayList<>();
-    SharedPreferences sPref;
-    Model mModel;
+    private List<double[][]> array_of_Command = new ArrayList<>();
+    private SharedPreferences sPref;
+    private Model mModel;
+    private Context mCntxt;
 
-    SpeechCommandRecognizer(int sampleRate, int windowSize) {
+    SpeechCommandRecognizer(int sampleRate, int windowSize, Context cntx) {
         this.sampleRate = sampleRate;
         this.windowSize = windowSize;
         /*double temp[][] = new double[divison_of_parts][M];
         for (int i = 0; i < 4; i++)
             array_of_Command.add(temp);*/
         mModel = Model.getInstance();
+        mCntxt = cntx;
     }
 
     public void setRawSignal(short[] data) {
@@ -38,9 +41,8 @@ public class SpeechCommandRecognizer {
         System.arraycopy(data, 0, rawSignal, 0, data.length);
     }
 
-
     public void word_selection() {
-        short P = 250;
+        short P = 200;
         int k = 0, t = (int) (sampleRate * 0.35);
         int min_length = (int) (sampleRate * 0.25),
                 max_length = (int) (sampleRate), word_size;
@@ -94,13 +96,13 @@ public class SpeechCommandRecognizer {
                     incomplete = false;
                     //Log.d(TAG, "not decent, length = " + word_size + " new_word_size = " +
                     //        new_word_size + " max_length" + max_length + " min_length" +
-                     //       min_length);
+                    //       min_length);
                 }
             } else if (new_word_size < min_length) {
                 array_of_words.remove(array_of_words.size() - 1);
                 incomplete = false;
                 //Log.d(TAG, "not decent, word size = " + word_size + "new word size" +
-                 //       new_word_size + " to small" + "min_length = " + min_length);
+                //       new_word_size + " to small" + "min_length = " + min_length);
             }
         }
         // Цикл поиска начала слова если флаг не поднят
@@ -244,12 +246,12 @@ public class SpeechCommandRecognizer {
         double similarity[] = new double[array_of_Command.size()];
         for (int i = 0; i < array_of_Command.size(); i++) {
             for (int j = 0; j < divison_of_parts; j++)
-                for (int l = 0; l < M-3; l++) {
+                for (int l = 0; l < M - 3; l++) {
                     double A, B, C, D;
                     A = Math.abs(mfcc[j][l] - array_of_Command.get(i)[j][l]);
-                    B = Math.abs(mfcc[j][l+1] - array_of_Command.get(i)[j][l+1]);
-                    C = Math.abs(mfcc[j][l+2] - array_of_Command.get(i)[j][l+2]);
-                    D = Math.abs(mfcc[j][l+3] - array_of_Command.get(i)[j][l+3]);
+                    B = Math.abs(mfcc[j][l + 1] - array_of_Command.get(i)[j][l + 1]);
+                    C = Math.abs(mfcc[j][l + 2] - array_of_Command.get(i)[j][l + 2]);
+                    D = Math.abs(mfcc[j][l + 3] - array_of_Command.get(i)[j][l + 3]);
                     similarity[i] += (A + B * 2 + C * 2 + D) / 2;
                 }
             similarity[i] = Math.sqrt(similarity[i]);
@@ -288,60 +290,64 @@ public class SpeechCommandRecognizer {
             case 0:
                 //renderer.setXTitle("Направо");
                 Log.d(TAG, "Направо");
+                Toast.makeText(mCntxt, "Направо", Toast.LENGTH_SHORT).show();
                 break;
             case 1:
-                //renderer.setXTitle("Налево");
+                //renderer.setXTitle("Направо");
                 Log.d(TAG, "Налево");
+                Toast.makeText(mCntxt, "Налево", Toast.LENGTH_SHORT).show();
                 break;
             case 2:
-                //renderer.setXTitle("Вверх");
+                //renderer.setXTitle("Направо");
                 Log.d(TAG, "Вверх");
+                Toast.makeText(mCntxt, "Вверх", Toast.LENGTH_SHORT).show();
                 break;
             case 3:
-                //renderer.setXTitle("Вниз");
+                //renderer.setXTitle("Направо");
                 Log.d(TAG, "Вниз");
+                Toast.makeText(mCntxt, "Вниз", Toast.LENGTH_SHORT).show();
                 break;
         }
-
     }
 
-    public void Calibrate(int number_of_command) {
-        double temp [][] = new double[divison_of_parts][M];
-        for(int i=0; i< divison_of_parts;i++)
-            for(int j=0; j< M;j++)
-                temp[i][j] = array_of_MFCC[i][j];
-        array_of_Command.set(number_of_command, temp);
-        Log.d(TAG, "Calibrate " + number_of_command + " done!");
-    }
 
-    public void save_standards(Context mContext) {
-        sPref = mContext.getSharedPreferences("MyPref", 0);
-        Editor ed = sPref.edit();
-        for (int i = 0; i < array_of_Command.size(); i++) {
-            for (int j = 0; j < divison_of_parts; j++)
-                for (int l = 0; l < M; l++)
-                    ed.putFloat("command [" + i + "][" + j + "][" + l + "]",
-                            (float) array_of_Command.get(i)[j][l]);
-            ed.apply();
-        }
-    }
-
-    public void load_standards(Context mContext) {
-        Log.d(TAG, "load_standards: begin");
-        sPref = mContext.getSharedPreferences("MyPref", 0);
-        Editor ed = sPref.edit();
-        for (int i = 0; i < 4; i++) {
+        public void Calibrate(int number_of_command) {
             double temp [][] = new double[divison_of_parts][M];
-            for (int j = 0; j < divison_of_parts; j++)
-                for (int l = 0; l < M; l++) {
-                    temp[j][l] = (double)
-                            sPref.getFloat("command [" + i + "][" + j + "][" + l + "]", 0);
-                    //Log.d(TAG, "aOc["+i+"]["+j+"]["+l+"] = " +
-                    //        sPref.getFloat("command [" + i + "][" + j + "][" + l + "]", 0));
-                }
-            array_of_Command.add(temp);
+            for(int i=0; i< divison_of_parts;i++)
+                for(int j=0; j< M;j++)
+                    temp[i][j] = array_of_MFCC[i][j];
+            array_of_Command.set(number_of_command, temp);
+            Log.d(TAG, "Calibrate " + number_of_command + " done!");
         }
-        ed.apply();
-        Log.d(TAG, "load_standards: end");
+
+        public void save_standards(Context mContext) {
+            sPref = mContext.getSharedPreferences("MyPref", 0);
+            Editor ed = sPref.edit();
+            for (int i = 0; i < array_of_Command.size(); i++) {
+                for (int j = 0; j < divison_of_parts; j++)
+                    for (int l = 0; l < M; l++)
+                        ed.putFloat("command [" + i + "][" + j + "][" + l + "]",
+                                (float) array_of_Command.get(i)[j][l]);
+                ed.apply();
+            }
+        }
+
+        public void load_standards(Context mContext) {
+            Log.d(TAG, "load_standards: begin");
+            sPref = mContext.getSharedPreferences("MyPref", 0);
+            Editor ed = sPref.edit();
+            for (int i = 0; i < 4; i++) {
+                double temp [][] = new double[divison_of_parts][M];
+                for (int j = 0; j < divison_of_parts; j++)
+                    for (int l = 0; l < M; l++) {
+                        temp[j][l] = (double)
+                                sPref.getFloat("command [" + i + "][" + j + "][" + l + "]", 0);
+                        //Log.d(TAG, "aOc["+i+"]["+j+"]["+l+"] = " +
+                        //        sPref.getFloat("command [" + i + "][" + j + "][" + l + "]", 0));
+                    }
+                array_of_Command.add(temp);
+            }
+            ed.apply();
+            Log.d(TAG, "load_standards: end");
+        }
     }
-}

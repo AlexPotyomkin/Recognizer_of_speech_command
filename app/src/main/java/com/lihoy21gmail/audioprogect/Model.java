@@ -6,7 +6,7 @@ import java.util.Observable;
 
 public class Model extends Observable {
     private static Model instance;
-    private int myBufferSize = 44100;
+    private int myBufferSize = 66150;
     private int sampleRate = 22050;
     private short[] myBuffer = new short[myBufferSize];
     private List<short[]> array_of_words = new ArrayList<>();
@@ -29,6 +29,7 @@ public class Model extends Observable {
         }
         return instance;
     }
+
     public int getMyBufferSize() {
         return myBufferSize;
     }
@@ -51,11 +52,6 @@ public class Model extends Observable {
 
     public void setArray_of_MFCC(double[][] array_of_MFCC) {
         this.array_of_MFCC = array_of_MFCC;
-        setChanged();
-        notifyObservers();
-    }
-
-    public void repaint(){
         setChanged();
         notifyObservers();
     }
