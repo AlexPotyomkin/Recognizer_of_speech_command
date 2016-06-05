@@ -3,11 +3,13 @@ package com.lihoy21gmail.audioprogect;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PriorityQueue;
 
 public class SpeechCommandRecognizer {
     private final String TAG = "myLogs";
@@ -15,10 +17,11 @@ public class SpeechCommandRecognizer {
     private int windowSize;
     private int sampleRate;
     private boolean incomplete = false;
-    private int M = 40;
-    private int divison_of_parts = 6;
+    private int M = 20;
+    private int divison_of_parts = 7;
     private double fl = 90;
     private double fh = 5000;
+    private double lastMFCC;
     private short rawSignal[];
     private double array_of_MFCC[][] = new double[divison_of_parts][M];
     private List<double[][]> array_of_Command = new ArrayList<>();
@@ -29,9 +32,6 @@ public class SpeechCommandRecognizer {
     SpeechCommandRecognizer(int sampleRate, int windowSize, Context cntx) {
         this.sampleRate = sampleRate;
         this.windowSize = windowSize;
-        /*double temp[][] = new double[divison_of_parts][M];
-        for (int i = 0; i < 4; i++)
-            array_of_Command.add(temp);*/
         mModel = Model.getInstance();
         mCntxt = cntx;
     }
@@ -41,9 +41,9 @@ public class SpeechCommandRecognizer {
         System.arraycopy(data, 0, rawSignal, 0, data.length);
     }
 
-    public void word_selection() {
-        short P = 200;
-        int k = 0, t = (int) (sampleRate * 0.35);
+    public int word_selection() {
+        short P = 50;
+        int k = 0, t = (int) (sampleRate * 0.3);
         int min_length = (int) (sampleRate * 0.25),
                 max_length = (int) (sampleRate), word_size;
         int begin_word, l = 0;
@@ -69,7 +69,7 @@ public class SpeechCommandRecognizer {
                 else k++;
                 if (l + 1 < windowSize) l++;
                 else {
-                    // Если дошел весе окно потока, но не нашел конца
+                    // Если дошел до конца потока, но не нашел конца
                     // то выхожу из цикла, поднимаю флаг
                     incomplete = true;
                     break;
@@ -82,7 +82,6 @@ public class SpeechCommandRecognizer {
                 new_word_size = word_size + l;
             // Елси найден конец или дошел до конца потока, то записую в список слово
             if (l > t || incomplete) {
-
                 // Если размер слова не привышает максимальной длинны, то записую в списоок
                 if (new_word_size <= max_length) {
                     short new_word[] = new short[new_word_size];
@@ -105,7 +104,8 @@ public class SpeechCommandRecognizer {
                 //       new_word_size + " to small" + "min_length = " + min_length);
             }
         }
-        // Цикл поиска начала слова если флаг не поднят
+
+        // Цикл поиска начала слова, если флаг не поднят
         for (int i = l; i < windowSize; i++) {
             k = 0;
             if (Math.abs(rawSignal[i]) > P) {
@@ -139,27 +139,30 @@ public class SpeechCommandRecognizer {
             }
         }
         //silence_removing();
-        mModel.setArray_of_words(array_of_words);
+        //mModel.setArray_of_words(array_of_words);
 
         // Обновление графика
         if (!incomplete && array_of_words.size() != 0) {
-            //if (timeSeries.getItemCount() != 0)
-            //    timeSeries.clear();
+            // Thread mThread = new Thread() {
+            // new Handler().postDelayed(new Runnable() {
+            //     public void run() {
             word_size = array_of_words.get(array_of_words.size() - 1).length;
             double new_word[] = new double[word_size];
             for (int i = 0; i < word_size; i++)
                 new_word[i] = array_of_words.get(array_of_words.size() - 1)[i];
+
             //System.arraycopy(array_of_words.get(array_of_words.size() - 1), 0, new_word, 0, word_size);
+
             RealDoubleFFT transformer = new RealDoubleFFT(word_size);
             transformer.ft(new_word);
             //Log.d(TAG, "word_selection: word size = " + word_size + "  temp size = " + (word_size/2));
-
+/*
             double kof = ((double) windowSize / sampleRate) * 0.5;
 
-            for (int i = 0; i < word_size; i++)
+           for (int i = 0; i < word_size; i++)
                 if (i * kof < fl && i * kof > fh)
                     new_word[i] = 0;
-
+*/
             List<double[]> array_of_frame = division_into_frames(new_word, divison_of_parts);
             double mfcc[];
             //Log.d(TAG, "array size = " +array_of_frame.size());
@@ -168,10 +171,15 @@ public class SpeechCommandRecognizer {
                 System.arraycopy(mfcc, 0, array_of_MFCC[i], 0, M);
             }
             array_of_frame.clear();
-            mModel.setArray_of_MFCC(array_of_MFCC);
-            associate(array_of_MFCC);
-        }
 
+            //if(!incomplete)
+             //   array_of_words.clear();
+            //},10);
+            //mThread.start();
+            // mModel.setArray_of_MFCC(array_of_MFCC);
+            return associate(array_of_MFCC);
+        }
+        return -1;
     }
 
     public void silence_removing() {
@@ -242,21 +250,124 @@ public class SpeechCommandRecognizer {
         return array_of_frame;
     }
 
-    public void associate(double mfcc[][]) {
+    public int associate(double mfcc[][]) {
         double similarity[] = new double[array_of_Command.size()];
         for (int i = 0; i < array_of_Command.size(); i++) {
             for (int j = 0; j < divison_of_parts; j++)
                 for (int l = 0; l < M - 3; l++) {
-                    double A, B, C, D;
-                    A = Math.abs(mfcc[j][l] - array_of_Command.get(i)[j][l]);
-                    B = Math.abs(mfcc[j][l + 1] - array_of_Command.get(i)[j][l + 1]);
-                    C = Math.abs(mfcc[j][l + 2] - array_of_Command.get(i)[j][l + 2]);
-                    D = Math.abs(mfcc[j][l + 3] - array_of_Command.get(i)[j][l + 3]);
-                    similarity[i] += (A + B * 2 + C * 2 + D) / 2;
+                    similarity[i] += Math.sqrt(Math.abs(Math.pow(mfcc[j][l], 2)
+                            - Math.pow(array_of_Command.get(i)[j][l], 2)));
                 }
-            similarity[i] = Math.sqrt(similarity[i]);
         }
 
+        if(similarity[0]!=lastMFCC) {
+            lastMFCC = similarity[0];
+            double min = similarity[0];
+            int mini = 0;
+            for (int i = 1; i < array_of_Command.size(); i++)
+                if (similarity[i] < min) {
+                    min = similarity[i];
+                    mini = i;
+                }
+            if (min > 25000)
+                return -1;
+            Log.d(TAG, "associate: \n"
+                    + " command 1 = " + similarity[0] + "\n"
+                    + " command 2 = " + similarity[1] + "\n"
+                    + " command 3 = " + similarity[2] + "\n"
+                    + " command 4 = " + similarity[3]);
+            switch (mini) {
+                case 0:
+                    //renderer.setXTitle("Направо");
+                    Log.d(TAG, "Направо");
+                    //Toast.makeText(mCntxt, "Направо", Toast.LENGTH_SHORT).show();
+                    return 0;
+                case 1:
+                    //renderer.setXTitle("Направо");
+                    Log.d(TAG, "Налево");
+                    //Toast.makeText(mCntxt, "Налево", Toast.LENGTH_SHORT).show();
+                    return 1;
+                case 2:
+                    //renderer.setXTitle("Направо");
+                    Log.d(TAG, "Вверх");
+                    //Toast.makeText(mCntxt, "Вверх", Toast.LENGTH_SHORT).show();
+                    return 2;
+                case 3:
+                    //renderer.setXTitle("Направо");
+                    Log.d(TAG, "Вниз");
+                    // Toast.makeText(mCntxt, "Вниз", Toast.LENGTH_SHORT).show();
+                    return 3;
+                default:
+                    return -1;
+            }
+        } else
+        {
+            //Log.d(TAG, "associate: not change");
+            return -1;
+        }
+    }
+
+    public void Calibrate(int number_of_command) {
+        double temp[][] = new double[divison_of_parts][M];
+        for (int i = 0; i < divison_of_parts; i++)
+            for (int j = 0; j < M; j++)
+                temp[i][j] = array_of_MFCC[i][j];
+        array_of_Command.set(number_of_command, temp);
+        Log.d(TAG, "Calibrate " + number_of_command + " done!");
+    }
+
+    public void save_standards(Context mContext) {
+        sPref = mContext.getSharedPreferences("MyPref", 0);
+        Editor ed = sPref.edit();
+        for (int i = 0; i < array_of_Command.size(); i++) {
+            for (int j = 0; j < divison_of_parts; j++)
+                for (int l = 0; l < M; l++)
+                    ed.putFloat("command [" + i + "][" + j + "][" + l + "]",
+                            (float) array_of_Command.get(i)[j][l]);
+            ed.apply();
+        }
+    }
+
+    public void load_standards(Context mContext) {
+        sPref = mContext.getSharedPreferences("MyPref", 0);
+        Editor ed = sPref.edit();
+        for (int i = 0; i < 4; i++) {
+            double temp[][] = new double[divison_of_parts][M];
+            for (int j = 0; j < divison_of_parts; j++)
+                for (int l = 0; l < M; l++) {
+                    temp[j][l] = (double)
+                            sPref.getFloat("command [" + i + "][" + j + "][" + l + "]", 0);
+                    //Log.d(TAG, "aOc["+i+"]["+j+"]["+l+"] = " +
+                    //        sPref.getFloat("command [" + i + "][" + j + "][" + l + "]", 0));
+                }
+            array_of_Command.add(temp);
+        }
+        ed.apply();
+    }
+
+    public List<short[]> getArray_of_words() {
+        if (incomplete)
+            return new ArrayList<>();
+         else
+            return array_of_words;
+    }
+
+    public void clearWordArray (){
+        if(array_of_words.size()>5)
+        array_of_words.remove(0);
+    }
+}
+
+
+/*
+            double A, B, C, D;
+            A = Math.abs(mfcc[j][l] - array_of_Command.get(i)[j][l]);
+            B = Math.abs(mfcc[j][l + 1] - array_of_Command.get(i)[j][l + 1]);
+            C = Math.abs(mfcc[j][l + 2] - array_of_Command.get(i)[j][l + 2]);
+            D = Math.abs(mfcc[j][l + 3] - array_of_Command.get(i)[j][l + 3]);
+            similarity[i] += (A + B * 2 + C * 2 + D) / 2;
+        }
+        similarity[i] = Math.sqrt(similarity[i]);*/
  /*       for (int i = 0; i < command.length; i++) {
             for (int j = 2; j < 16; j++) {
 
@@ -272,82 +383,3 @@ public class SpeechCommandRecognizer {
                             Math.pow(mfcc[j][l]-array_of_Command.get(i)[j][l],2)+
                             Math.pow(mfcc[j][l]-array_of_Command.get(i)[j][l+1],2)+
                             Math.pow(mfcc[j][l]-array_of_Command.get(i)[j][l+2],2));*/
-
-
-        Log.d(TAG, "associate: \n"
-                + " command 1 = " + similarity[0] + "\n"
-                + " command 2 = " + similarity[1] + "\n"
-                + " command 3 = " + similarity[2] + "\n"
-                + " command 4 = " + similarity[3]);
-        double min = similarity[0];
-        int mini = 0;
-        for (int i = 1; i < array_of_Command.size(); i++)
-            if (similarity[i] < min) {
-                min = similarity[i];
-                mini = i;
-            }
-        switch (mini) {
-            case 0:
-                //renderer.setXTitle("Направо");
-                Log.d(TAG, "Направо");
-                Toast.makeText(mCntxt, "Направо", Toast.LENGTH_SHORT).show();
-                break;
-            case 1:
-                //renderer.setXTitle("Направо");
-                Log.d(TAG, "Налево");
-                Toast.makeText(mCntxt, "Налево", Toast.LENGTH_SHORT).show();
-                break;
-            case 2:
-                //renderer.setXTitle("Направо");
-                Log.d(TAG, "Вверх");
-                Toast.makeText(mCntxt, "Вверх", Toast.LENGTH_SHORT).show();
-                break;
-            case 3:
-                //renderer.setXTitle("Направо");
-                Log.d(TAG, "Вниз");
-                Toast.makeText(mCntxt, "Вниз", Toast.LENGTH_SHORT).show();
-                break;
-        }
-    }
-
-
-        public void Calibrate(int number_of_command) {
-            double temp [][] = new double[divison_of_parts][M];
-            for(int i=0; i< divison_of_parts;i++)
-                for(int j=0; j< M;j++)
-                    temp[i][j] = array_of_MFCC[i][j];
-            array_of_Command.set(number_of_command, temp);
-            Log.d(TAG, "Calibrate " + number_of_command + " done!");
-        }
-
-        public void save_standards(Context mContext) {
-            sPref = mContext.getSharedPreferences("MyPref", 0);
-            Editor ed = sPref.edit();
-            for (int i = 0; i < array_of_Command.size(); i++) {
-                for (int j = 0; j < divison_of_parts; j++)
-                    for (int l = 0; l < M; l++)
-                        ed.putFloat("command [" + i + "][" + j + "][" + l + "]",
-                                (float) array_of_Command.get(i)[j][l]);
-                ed.apply();
-            }
-        }
-
-        public void load_standards(Context mContext) {
-            Log.d(TAG, "load_standards: begin");
-            sPref = mContext.getSharedPreferences("MyPref", 0);
-            Editor ed = sPref.edit();
-            for (int i = 0; i < 4; i++) {
-                double temp [][] = new double[divison_of_parts][M];
-                for (int j = 0; j < divison_of_parts; j++)
-                    for (int l = 0; l < M; l++) {
-                        temp[j][l] = (double)
-                                sPref.getFloat("command [" + i + "][" + j + "][" + l + "]", 0);
-                        //Log.d(TAG, "aOc["+i+"]["+j+"]["+l+"] = " +
-                        //        sPref.getFloat("command [" + i + "][" + j + "][" + l + "]", 0));
-                    }
-                array_of_Command.add(temp);
-            }
-            ed.apply();
-            Log.d(TAG, "load_standards: end");
-        }
-    }

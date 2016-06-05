@@ -3,7 +3,7 @@ package com.lihoy21gmail.audioprogect;
   * @author Baoshe Zhang
   * @author Astronomical Instrument Group of University of Lethbridge.
 */
-class RealDoubleFFT_Mixed
+public class RealDoubleFFT_Mixed
 {
 
 /*-------------------------------------------------

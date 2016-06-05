@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingLeft="30dp"
+    android:background="#aca8a8a8"
+    android:paddingRight="30dp">
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp"
+        android:text="Настройки"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textSize="18pt" />
+
+    <Switch
+        android:id="@+id/swtchMusic"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignTop="@+id/textView"
+        android:layout_marginTop="120dp"
+        android:text="Музыка"
+        android:textSize="14pt" />
+
+    <Switch
+        android:id="@+id/swtchSound"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/swtchMusic"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp"
+        android:text="Звук"
+        android:textSize="14pt" />
+
+    <Button
+        android:id="@+id/btnCalibrate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="35dp"
+        android:elevation="5dp"
+        android:text="Калибровка микрофона"
+        android:textSize="10pt"/>
+</RelativeLayout>

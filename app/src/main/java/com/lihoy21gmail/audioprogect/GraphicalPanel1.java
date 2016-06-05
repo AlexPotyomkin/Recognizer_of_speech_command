@@ -72,4 +72,11 @@ public class GraphicalPanel1 extends Fragment implements Observer {
         renderer.setXAxisMax(array_of_words.get(array_of_words.size()-1).length);
         view.repaint();
     }
+
+    @Override
+    public void onDetach() {
+        Log.d(TAG, "onDetach: deleteObserver");
+        mModel.deleteObserver(this);
+        super.onDetach();
+    }
 }

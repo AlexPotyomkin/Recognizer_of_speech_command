@@ -6,14 +6,33 @@ import java.util.Observable;
 
 public class Model extends Observable {
     private static Model instance;
-    private int myBufferSize = 66150;
-    private int sampleRate = 22050;
+    private int myBufferSize = 14000;
+    private int sampleRate = 8000;
     private short[] myBuffer = new short[myBufferSize];
     private List<short[]> array_of_words = new ArrayList<>();
-    private int M;
+    private int SpeechRecognitionResult;
+    private boolean changeResult = false;
     double array_of_MFCC[][];
 
     private Model(){}
+
+    public int getSpeechRecognitionResult() {
+        return SpeechRecognitionResult;
+    }
+
+    public void setSpeechRecognitionResult(int speechRecognitionResult) {
+        SpeechRecognitionResult = speechRecognitionResult;
+        setChanged();
+        notifyObservers();
+    }
+
+    public boolean isChangeResult() {
+        return changeResult;
+    }
+
+    public void setChangeResult(boolean changeResult) {
+        this.changeResult = changeResult;
+    }
 
     public List<short[]> getArray_of_words() {
         return array_of_words;
@@ -21,6 +40,8 @@ public class Model extends Observable {
 
     public void setArray_of_words(List<short[]> array_of_words) {
         this.array_of_words = array_of_words;
+        setChanged();
+        notifyObservers();
     }
 
     public static Model getInstance(){
