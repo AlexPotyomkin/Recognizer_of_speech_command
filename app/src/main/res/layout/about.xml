@@ -9,7 +9,7 @@
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Об авторах"
+        android:text="@string/about"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:textSize="17pt"
         android:layout_above="@+id/textView3"
@@ -21,7 +21,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="12pt"
-        android:text="Разработчик: Потёмкин А.С."
+        android:text="@string/developer"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true" />

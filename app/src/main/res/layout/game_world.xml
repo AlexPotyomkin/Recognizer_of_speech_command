@@ -14,7 +14,7 @@
             android:id="@+id/toMenu"
             android:layout_width="wrap_content"
             android:layout_height="50dp"
-            android:text="Меню" />
+            android:text="@string/menu" />
 
         <TextView
             android:id="@+id/lvl"
@@ -33,8 +33,8 @@
             android:layout_height="50dp"
             android:layout_alignParentEnd="true"
             android:layout_alignParentTop="true"
-            android:layout_gravity="right"
-            android:text="Заново" />
+            android:layout_gravity="end"
+            android:text="@string/again" />
 
             <Switch
             android:id="@+id/speech_command"
@@ -43,7 +43,7 @@
             android:layout_centerHorizontal="true"
             android:checked="false"
             android:layout_alignParentBottom="true"
-            android:text="Включить управление голосом"
+            android:text="@string/on_voice_control"
             android:textSize="9pt" />
     </RelativeLayout>
 
@@ -63,6 +63,6 @@
             android:layout_height="50dp"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            android:text="Отмена" />
+            android:text="@string/cancel" />
     </RelativeLayout>
 </LinearLayout>

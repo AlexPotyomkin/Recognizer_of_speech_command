@@ -7,7 +7,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 
@@ -22,21 +21,6 @@ public class SettingsFragment extends Fragment {
                              Bundle savedInstanceState) {
         final View v = inflater.inflate(R.layout.settings, null);
         LoadPref();
-        Button btnCalibrate = (Button) v.findViewById(R.id.btnCalibrate);
-        btnCalibrate.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                CalibrateFragment calibrateFragment = new CalibrateFragment();
-                getFragmentManager().
-                        beginTransaction().
-                        replace(android.R.id.content, calibrateFragment).
-                        addToBackStack(null).
-                        commit();
-                ((MainActivity) getActivity()).StopMusic();
-
-            }
-        });
-
         Switch swtchSound = (Switch) v.findViewById(R.id.swtchSound);
         swtchSound.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override

@@ -11,9 +11,9 @@ import android.widget.Button;
 import android.widget.Toast;
 
 public class GameMenuFragment extends Fragment {
-    private SharedPreferences sPref;
     private final String TAG = "myLogs";
-    private boolean GameState = false;
+    private boolean GameState;
+    SharedPreferences sPref;
 
     public static GameMenuFragment newInstance(int lvl, int CountLevel) {
         GameMenuFragment f = new GameMenuFragment();
@@ -36,6 +36,7 @@ public class GameMenuFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final View v = inflater.inflate(R.layout.game_menu, null);
+        LoadPref();
         Button btnProceed = (Button) v.findViewById(R.id.proceed);
         Button btnNext = (Button) v.findViewById(R.id.next);
         Button btnLevelChoice = (Button) v.findViewById(R.id.lvl_choice);
@@ -46,11 +47,10 @@ public class GameMenuFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 GameWorldFragment gameWorldFragment = GameWorldFragment.
-                        newInstance(getLevelNumber());
+                            newInstance(getLevelNumber());
                 getFragmentManager().
                         beginTransaction().
-                        //remove(getFragmentManager().findFragmentByTag("menu")).
-                                replace(android.R.id.content, gameWorldFragment).
+                        replace(android.R.id.content, gameWorldFragment).
                         commit();
 
             }
@@ -61,14 +61,12 @@ public class GameMenuFragment extends Fragment {
                 if (getCountLevel() > getLevelNumber() + 1) {
                     GameState = true;
                     GameWorldFragment gameWorldFragment = GameWorldFragment.
-                            newInstance(getLevelNumber()+1);
+                            newInstance(getLevelNumber() + 1);
                     getFragmentManager().
                             beginTransaction().
-                            //remove(getFragmentManager().findFragmentByTag("menu")).
                             replace(android.R.id.content, gameWorldFragment).
                             commit();
-                }
-                else
+                } else
                     Toast.makeText(getActivity(), "Это последний уровень, новые будут скоро",
                             Toast.LENGTH_SHORT).show();
             }
@@ -101,8 +99,8 @@ public class GameMenuFragment extends Fragment {
                 SettingsFragment settingsFragment = new SettingsFragment();
                 getFragmentManager().
                         beginTransaction().
-                                replace(android.R.id.content, settingsFragment).
-                                addToBackStack(null).
+                        replace(android.R.id.content, settingsFragment).
+                        addToBackStack(null).
                         commit();
             }
         });
@@ -112,7 +110,10 @@ public class GameMenuFragment extends Fragment {
                 getActivity().finish();
             }
         });
+        Log.d(TAG, "onCreateView: GameState " + GameState);
+
         return v;
+
     }
 
     @Override
@@ -126,6 +127,15 @@ public class GameMenuFragment extends Fragment {
         sPref = getActivity().getSharedPreferences("settings", 0);
         SharedPreferences.Editor ed = sPref.edit();
         ed.putBoolean("IsDone", GameState);
+        Log.d(TAG, "SavePref: game state " + GameState);
+        ed.apply();
+    }
+
+    public void LoadPref() {
+        Log.d(TAG, "LoadPref: GameWorld");
+        sPref = getActivity().getSharedPreferences("settings", 0);
+        SharedPreferences.Editor ed = sPref.edit();
+        GameState = sPref.getBoolean("IsDone", true);
         ed.apply();
     }
 }

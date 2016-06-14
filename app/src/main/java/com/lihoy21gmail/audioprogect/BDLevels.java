@@ -1,10 +1,6 @@
 package com.lihoy21gmail.audioprogect;
 
-
-import android.util.Log;
-
 public class BDLevels {
-    private final String TAG = "myLogs";
     private String levels;
     private int height;
     private int width;

@@ -1,66 +1,62 @@
 package com.lihoy21gmail.audioprogect;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.SharedPreferences;
-import android.media.AudioFormat;
 import android.media.AudioManager;
-import android.media.AudioRecord;
 import android.media.MediaPlayer;
-import android.media.MediaRecorder;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
+import android.widget.Toast;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Locale;
+
+import edu.cmu.pocketsphinx.Assets;
+import edu.cmu.pocketsphinx.Hypothesis;
+import edu.cmu.pocketsphinx.RecognitionListener;
+import edu.cmu.pocketsphinx.SpeechRecognizer;
+import edu.cmu.pocketsphinx.SpeechRecognizerSetup;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements
+        RecognitionListener {
     private final String TAG = "myLogs";
-    private int myBufferSize;
-    private int sampleRate;
-    private short[] myBuffer;
-    private boolean isReading = false;
-    private SpeechCommandRecognizer speechCommandRecognizer;
-    private AudioRecord audioRecord = null;
     private Model mModel;
     private SharedPreferences sPref;
     private Boolean MusicState;
-    MediaPlayer mediaPlayer;
-    AudioManager am;
+    private MediaPlayer mediaPlayer;
+    private AudioManager am;
+    private boolean flag;
+    private static final String COMMANDS_SEARCH = "commands";
+    private SpeechRecognizer recognizer;
+    private int lastLength = 1;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main1);
+        setContentView(R.layout.main);
         LoadPref();
-        //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        Log.d("", "onCreate: " + Locale.getDefault().getLanguage());
+        switch (Locale.getDefault().getLanguage()) {
+            case "ru":
+                flag = true;
+                break;
+            case "en":
+                flag = false;
+                break;
+            default:
+                flag = false;
+        }
         mModel = Model.getInstance();
-        myBufferSize = mModel.getMyBufferSize();
-        sampleRate = mModel.getSampleRate();
-        myBuffer = new short[myBufferSize];
-        speechCommandRecognizer = new SpeechCommandRecognizer(sampleRate, myBufferSize, getApplicationContext());
-        createAudioRecorder();
-        //Fragment controlPanel = new ControlPanel();
-        //Fragment graphicalPanel = new GraphicalPanel1();
-        speechCommandRecognizer.load_standards(getApplicationContext());
         am = (AudioManager) getSystemService(AUDIO_SERVICE);
-        //GameWorldFragment gameWorldFragment = GameWorldFragment.newInstance(0);
         MainMenuFragment mainMenuFragment = new MainMenuFragment();
         getFragmentManager().
                 beginTransaction().
                 replace(android.R.id.content, mainMenuFragment).
                 commit();
-
-
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.d(TAG, "onResume: ");
-
-        if (MusicState) StartMusic();
     }
 
     @Override
@@ -70,81 +66,17 @@ public class MainActivity extends Activity {
         super.onStart();
     }
 
-    private void createAudioRecorder() {
-        int channelConfig = AudioFormat.CHANNEL_IN_MONO;
-        final int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
-        int minInternalBufferSize = AudioRecord.getMinBufferSize(sampleRate,
-                channelConfig, audioFormat);
-        int internalBufferSize = minInternalBufferSize * 80;
-        Log.d(TAG, "minInternalBufferSize = " + minInternalBufferSize
-                + ", internalBufferSize = " + internalBufferSize
-                + ", myBufferSize = " + myBufferSize);
-
-        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                sampleRate, channelConfig, audioFormat, internalBufferSize);
-        if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED)
-            Log.d(TAG, "SUCCESS");
-        else
-            Log.d(TAG, "ERROR");
-
-        audioRecord.setPositionNotificationPeriod(myBufferSize);
-        //audioRecord.setNotificationMarkerPosition(myBufferSize);
-
-        audioRecord.setRecordPositionUpdateListener(
-            new AudioRecord.OnRecordPositionUpdateListener() {
-                @Override
-                public void onPeriodicNotification(AudioRecord recorder) {
-
-                    speechCommandRecognizer.setRawSignal(myBuffer);
-
-                    class Recognizing extends AsyncTask<Void,Void,Integer>{
-                        @Override
-                        protected Integer doInBackground(Void... params) {
-                            speechCommandRecognizer.clearWordArray();
-                            return speechCommandRecognizer.word_selection();
-                        }
-
-                        @Override
-                        protected void onPostExecute(Integer integer) {
-                            super.onPostExecute(integer);
-                            if(speechCommandRecognizer.getArray_of_words().size()!=0)
-                                mModel.setArray_of_words(speechCommandRecognizer.getArray_of_words());
-                            if (integer != -1) {
-                                Fragment currentFragment = getFragmentManager().
-                                        findFragmentById(android.R.id.content);
-                                //Log.d(TAG, "onPeriodicNotification: result != -1");
-                                if (currentFragment instanceof GameWorldFragment) {
-                                    //Log.d(TAG, "onPeriodicNotification: currentFragment instanceof GameWorldFragment");
-                                    mModel.setSpeechRecognitionResult(integer);
-                                    mModel.setChangeResult(true);
-                                }
-                            }
-                            //speechCommandRecognizer.clearWordArray();
-                        }
-                    }
-                    Recognizing recogn = new Recognizing();
-                    recogn.execute();
-
-                }
-
-                @Override
-                public void onMarkerReached(AudioRecord recorder) {}
-            }
-
-        );
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume: ");
+        if (MusicState) StartMusic();
     }
-
 
     @Override
     protected void onStop() {
         super.onStop();
-        Log.d(TAG, "onPause: stop record, save standard");
-        speechCommandRecognizer.save_standards(getApplicationContext());
-        if (audioRecord != null) {
-            isReading = false;
-            audioRecord.release();
-            audioRecord = null;
-        }
+        Log.d(TAG, "onPause: stop record");
         if (MusicState)
             mediaPlayer.stop();
         if (mediaPlayer != null) {
@@ -155,11 +87,6 @@ public class MainActivity extends Activity {
                 e.printStackTrace();
             }
         }
-    }
-
-    public void on_Calibrate(int number_of_command) {
-        speechCommandRecognizer.Calibrate(number_of_command);
-        speechCommandRecognizer.save_standards(getApplicationContext());
     }
 
     @Override
@@ -188,38 +115,143 @@ public class MainActivity extends Activity {
 
     public void stopSpeechRecognition() {
         Log.d(TAG, "stopSpeechRecognition: ");
-        isReading = false;
-        if (audioRecord != null) {
-            try {
-                audioRecord.release();
-                audioRecord = null;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
+        if(recognizer!= null)
+        recognizer.stop();
     }
 
     public void startSpeechRecognition() {
         Log.d(TAG, "startSpeechRecognition: ");
+        Toast.makeText(this, getResources().getString(R.string.pre_warn),
+                Toast.LENGTH_SHORT).show();
+        runRecognizerSetup();
+    }
 
-        if (audioRecord == null)
-            createAudioRecorder();
-        audioRecord.startRecording();
-        Thread mThread = new Thread() {
-            public void run() {
-                Log.d(TAG, "record start, read");
-                int count;
-                isReading = true;
-                while (isReading) {
-                    count = audioRecord.read(myBuffer, 0, myBufferSize);
-                    mModel.setMyBuffer(myBuffer);
-                    if (count != myBufferSize)
-                        Log.d(TAG, "Readed not all date" + count);
+    private void runRecognizerSetup() {
+        new AsyncTask<Void, Void, Exception>() {
+            @Override
+            protected Exception doInBackground(Void... params) {
+                try {
+                    Assets assets = new Assets(MainActivity.this);
+                    File assetDir = assets.syncAssets();
+                    setupRecognizer(assetDir);
+                } catch (IOException e) {
+                    return e;
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Exception result) {
+                if (result != null) {
+                    Log.d(TAG, "Failed to init recognizer " + result);
+                } else {
+                    reset();
                 }
             }
-        };
-        mThread.start();
+        }.execute();
+    }
+
+    @Override
+    public void onPartialResult(Hypothesis hypothesis) {
+
+        if (hypothesis == null)
+            return;
+        char text[] = hypothesis.getHypstr().toCharArray();
+        char temp[] = "\0".toCharArray();
+        if (text.length != 0 && lastLength != text.length) {
+            lastLength = text.length;
+            for (int i = 0; i < text.length; i++)
+                if (text[i] == ' ') {
+                    temp = new char[i];
+                    System.arraycopy(text, 0, temp, 0, i);
+                    break;
+                }
+            mModel.setSpeechRecognitionResult(changeResult(String.valueOf(temp)));
+        }
+    }
+
+    public int changeResult(String str) {
+        Log.d(TAG, "Result: " + str);
+        switch (str) {
+            case "направо":
+            case "right":
+                return 0;
+            case "налево":
+            case "left":
+                return 1;
+            case "вверх":
+            case "up":
+                return 2;
+            case "вниз":
+            case "down":
+                return 3;
+            case "отмена":
+            case "cancel":
+                return 4;
+            case "меню":
+            case "menu":
+                return 5;
+        }
+        return -1;
+    }
+
+    @Override
+    public void onResult(Hypothesis hypothesis) {
+    }
+
+    @Override
+    public void onBeginningOfSpeech() {
 
     }
+
+    @Override
+    public void onEndOfSpeech() {
+    }
+
+    private void reset() {
+        recognizer.stop();
+        recognizer.startListening(COMMANDS_SEARCH);
+    }
+
+    private void setupRecognizer(File assetsDir) throws IOException {
+        File commandstxt;
+        if (!flag) {
+            recognizer = SpeechRecognizerSetup.defaultSetup()
+                    .setAcousticModel(new File(assetsDir, "en-us-ptm"))
+                    .setDictionary(new File(assetsDir, "cmudict-en-us-short.dict"))
+                    .setBoolean("-allphone_ci", true)
+                    .getRecognizer();
+            recognizer.addListener(this);
+            commandstxt = new File(assetsDir, "commands-en.txt");
+            recognizer.addKeywordSearch(COMMANDS_SEARCH, commandstxt);
+        } else {
+            recognizer = SpeechRecognizerSetup.defaultSetup()
+                    .setAcousticModel(new File(assetsDir, "zero_ru.cd_ptm_4000"))
+                    .setDictionary(new File(assetsDir, "cmudict-ru-short.dic"))
+                    .setBoolean("-allphone_ci", true)
+                    .getRecognizer();
+            recognizer.addListener(this);
+            commandstxt = new File(assetsDir, "commands-ru.txt");
+            recognizer.addKeywordSearch(COMMANDS_SEARCH, commandstxt);
+        }
+
+    }
+
+    @Override
+    public void onError(Exception error) {
+    }
+
+    @Override
+    public void onTimeout() {
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (recognizer != null) {
+            recognizer.cancel();
+            recognizer.shutdown();
+        }
+    }
+
 }

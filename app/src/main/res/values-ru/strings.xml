@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Сокобан</string>
+    <string name="proceed">Продолжить</string>
+    <string name="level_select">Выбор уровня</string>
+    <string name="settings">Настройки</string>
+    <string name="about">Об авторах</string>
+    <string name="exit">Выход</string>
+    <string name="on_voice_control">Включить голосовое управление </string>
+    <string name="again">Заново</string>
+    <string name="cancel">Отмена</string>
+    <string name="next_level">Следующий уровень</string>
+    <string name="main_menu">Главное меню</string>
+    <string name="music">Музыка</string>
+    <string name="sounds">Звуки</string>
+    <string name="developer">Разработал: Потёмкин А.С.</string>
+    <string name="menu">Меню</string>
+    <string name="lvl">Уровень %1$d </string>
+    <string name="pre_warn">Подождите пока загрузятся компоненты для голосового управления</string>
+</resources>

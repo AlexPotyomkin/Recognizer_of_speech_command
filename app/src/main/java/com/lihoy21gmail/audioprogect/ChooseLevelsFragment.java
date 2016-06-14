@@ -13,7 +13,6 @@ import android.widget.TableRow;
 import android.widget.Toast;
 
 public class ChooseLevelsFragment extends Fragment {
-    private final String TAG = "myLogs";
     private BDLevels lvl;
     private final int COUNT_ROW = 4;
     private final int COUNT_COLUMN = 3;

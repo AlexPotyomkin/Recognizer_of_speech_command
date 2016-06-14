@@ -13,7 +13,7 @@ public class MainMenuFragment extends Fragment {
     private SharedPreferences sPref;
     private final String TAG = "myLogs";
     private int LastLevel;
-    private boolean GameState = false;
+    private boolean GameState;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -85,19 +85,19 @@ public class MainMenuFragment extends Fragment {
     }
 
     public void LoadPref() {
-        Log.d(TAG, "LoadPref: calibrate_fragment menu");
+        Log.d(TAG, "LoadPref: MainMenu");
         sPref = getActivity().getSharedPreferences("settings", 0);
         SharedPreferences.Editor ed = sPref.edit();
         LastLevel = sPref.getInt("LastLevel", 0);
-        Log.d(TAG, "LoadPref: last level = " + LastLevel);
+        GameState = sPref.getBoolean("IsDone", true);
+        Log.d(TAG, "LoadPref: gameState" + GameState);
         ed.apply();
     }
     public void SavePref() {
-        Log.d(TAG, "SavePref: calibrate_fragment menu");
+        Log.d(TAG, "SavePref: MainMenu");
         sPref = getActivity().getSharedPreferences("settings", 0);
         SharedPreferences.Editor ed = sPref.edit();
         ed.putBoolean("IsDone", GameState);
-        Log.d(TAG, "SavePref: GameState = " +GameState);
         ed.apply();
     }
 }

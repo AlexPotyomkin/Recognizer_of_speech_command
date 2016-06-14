@@ -43,19 +43,19 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
     private int PlacedBoxCount = 0;
     private BDLevels lvl;
     private Button btnCancel;
+    private Button btnMenu;
     private Model mModel;
     private SharedPreferences sPref;
-    SoundPool sp;
-    boolean SoundState;
-    boolean MusicStateLoad;
-    boolean SoundStateLoad;
-
-    boolean GameState;
-    boolean SpeechCommandState = false;
-    int soundIdStep;
-    int soundIdPark;
-    int soundIdNoWay;
-    int soundIdFlourish;
+    private SoundPool sp;
+    private boolean SoundState;
+    private boolean MusicStateLoad;
+    private boolean SoundStateLoad;
+    private boolean GameState;
+    private boolean SpeechCommandState = false;
+    private int soundIdStep;
+    private int soundIdPark;
+    private int soundIdNoWay;
+    private int soundIdFlourish;
 
 
     public static GameWorldFragment newInstance(int lvl) {
@@ -78,7 +78,6 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
         sp = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
         sp.setOnLoadCompleteListener(this);
         mModel = Model.getInstance();
-        mModel.setChangeResult(false);
         soundIdPark = sp.load(getActivity(), R.raw.park, 1);
         soundIdStep = sp.load(getActivity(), R.raw.step, 1);
         soundIdNoWay = sp.load(getActivity(), R.raw.noway, 1);
@@ -87,7 +86,7 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
         final View v = inflater.inflate(R.layout.game_world, null);
         final TableLayout tableLayout = (TableLayout) v.findViewById(R.id.tabLayout);
         TextView tv = (TextView) v.findViewById(R.id.lvl);
-        tv.setText("Уровень: " + getCurrLevel());
+        tv.setText(getResources().getString(R.string.lvl, getCurrLevel()));
         tableLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
@@ -108,7 +107,7 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
                         commit();
             }
         });
-        Button btnMenu = (Button) v.findViewById(R.id.toMenu);
+        btnMenu = (Button) v.findViewById(R.id.toMenu);
         btnMenu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -123,26 +122,29 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
         });
         btnCancel = (Button) v.findViewById(R.id.btnCancel);
         btnCancel.setOnClickListener(new View.OnClickListener() {
-             @Override
-             public void onClick(View v) {
-                 btnCancel.setEnabled(false);
-                 if (LastBoxPoint.x == -1) {
-                     TopMap[UserPoint.y][UserPoint.x] = Cell.None;
-                     ShowMapTop(UserPoint);
-                     TopMap[LastPreUserPoint.y][LastPreUserPoint.x] = Cell.User;
-                     ShowMapTop(LastPreUserPoint);
-                     UserPoint = LastPreUserPoint;
-                 } else {
-                     TopMap[LastBoxPoint.y][LastBoxPoint.x] = Cell.None;
-                     ShowMapTop(LastBoxPoint);
-                     TopMap[LastPreUserPoint.y][LastPreUserPoint.x] = Cell.User;
-                     ShowMapTop(LastPreUserPoint);
-                     TopMap[LastUserPoint.y][LastUserPoint.x] = Cell.Box;
-                     ShowMapTop(LastUserPoint);
-                     UserPoint = LastPreUserPoint;
-                 }
+                                         @Override
+                                         public void onClick(View v) {
+             btnCancel.setEnabled(false);
+             if (LastBoxPoint.x == -1) {
+                 TopMap[UserPoint.y][UserPoint.x] = Cell.None;
+                 ShowMapTop(UserPoint);
+                 TopMap[LastPreUserPoint.y][LastPreUserPoint.x] = Cell.User;
+                 ShowMapTop(LastPreUserPoint);
+                 UserPoint = LastPreUserPoint;
+
+             } else {
+                 TopMap[LastBoxPoint.y][LastBoxPoint.x] = Cell.None;
+                 ShowMapTop(LastBoxPoint);
+                 TopMap[LastPreUserPoint.y][LastPreUserPoint.x] = Cell.User;
+                 ShowMapTop(LastPreUserPoint);
+                 TopMap[LastUserPoint.y][LastUserPoint.x] = Cell.Box;
+                 ShowMapTop(LastUserPoint);
+                 UserPoint = LastPreUserPoint;
+                 if (CurrMap[LastBoxPoint.y][LastBoxPoint.x] == Cell.Point) PlacedBoxCount--;
+                 if (CurrMap[LastUserPoint.y][LastUserPoint.x] == Cell.Point) PlacedBoxCount++;
              }
          }
+     }
         );
         btnCancel.setEnabled(false);
         Switch swtchSpeechCommand = (Switch) v.findViewById(R.id.speech_command);
@@ -306,7 +308,8 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
     }
 
     public void step(int dx, int dy) {
-       // Log.d(TAG, "step: " + dx + " "+ dy);
+        if(GameState)
+            GameState=false;
         Point place;
         Point after;
         place = new Point(UserPoint.x + dx, UserPoint.y + dy);
@@ -358,13 +361,25 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
 
         if (IsDone()) {
             Log.d(TAG, "DONE");
+            GameState = true;
             if (SoundState) sp.play(soundIdFlourish, 1, 1, 1, 1, 1);
-            GameMenuFragment gameMenuFragment = GameMenuFragment.newInstance(getCurrLevel(),
-                    lvl.getTotalCountLvls());
-            getFragmentManager().
-                    beginTransaction().
-                    replace(android.R.id.content, gameMenuFragment, "menu").
-                    commit();
+            if (lvl.getTotalCountLvls() > getCurrLevel() + 1) {
+                GameState = true;
+                GameWorldFragment gameWorldFragment = GameWorldFragment.
+                        newInstance(getCurrLevel() + 1);
+                getFragmentManager().
+                        beginTransaction().
+                        replace(android.R.id.content, gameWorldFragment).
+                        commit();
+            } else {
+                MainMenuFragment mainMenufragment = new MainMenuFragment();
+                getFragmentManager().
+                        beginTransaction().
+                        replace(android.R.id.content, mainMenufragment).
+                        commit();
+                Toast.makeText(getActivity(), "Это последний уровень, новые будут скоро",
+                        Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -382,27 +397,18 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
                 difY = event.getY() - BeginMotionPoint.y;
                 if (Math.abs(difX) > Math.abs(difY))
                     if (difX > 0) {
-                        //Toast.makeText(getActivity(), "Вправо", Toast.LENGTH_SHORT).show();
-                        //Log.d(TAG, "onTouch: Вправо");
                         step(1, 0);
                     } else {
-                        //Toast.makeText(getActivity(), "Влево", Toast.LENGTH_SHORT).show();
-                        //Log.d(TAG, "onTouch: Влево");
                         step(-1, 0);
                     }
                 if (Math.abs(difX) < Math.abs(difY))
                     if (difY < 0) {
-                        //Toast.makeText(getActivity(), "Вверх", Toast.LENGTH_SHORT).show();
-                        //Log.d(TAG, "onTouch: Вверх");
                         step(0, -1);
                     } else {
-                        //Toast.makeText(getActivity(), "Вниз", Toast.LENGTH_SHORT).show();
-                        //Log.d(TAG, "onTouch: Вниз");
                         step(0, 1);
                     }
                 break;
         }
-
         return true;
     }
 
@@ -450,7 +456,7 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
         SoundStateLoad = SoundState = sPref.getBoolean("SoundState", false);
         MusicStateLoad = sPref.getBoolean("MusicState", false);
         GameState = sPref.getBoolean("IsDone", true);
-
+        Log.d(TAG, "LoadPref: game state " + GameState );
         SpeechCommandState = sPref.getBoolean("SpeechCommandState", false);
         if (!GameState) {
             TotalBoxCount = sPref.getInt("TotalBoxCount", 0);
@@ -459,7 +465,6 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
             for (int i = 0; i < RowCount; i++)
                 for (int j = 0; j < ColumnCount; j++)
                     CurrMap[i][j] = CharToCell(temp[i * ColumnCount + j]);
-
             temp = sPref.getString("Top", "").toCharArray();
             for (int i = 0; i < RowCount; i++)
                 for (int j = 0; j < ColumnCount; j++) {
@@ -469,7 +474,6 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
                 }
         }
         ed.apply();
-
     }
 
     public void SavePref() {
@@ -477,20 +481,24 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
         sPref = getActivity().getSharedPreferences("settings", 0);
         SharedPreferences.Editor ed = sPref.edit();
         ed.putBoolean("SpeechCommandState", SpeechCommandState);
+        Log.d(TAG, "SavePref: game state " + GameState );
         ed.putBoolean("IsDone", GameState);
+        Log.d(TAG, "SavePref: game state after" + GameState );
         ed.putInt("LastLevel", getCurrLevel());
-        ed.putInt("PlacedBoxCount", PlacedBoxCount);
-        ed.putInt("TotalBoxCount", TotalBoxCount);
-        StringBuilder temp = new StringBuilder();
-        for (int i = 0; i < RowCount; i++)
-            for (int j = 0; j < ColumnCount; j++)
-                temp.append(CellToChar(CurrMap[i][j]));
-        ed.putString("Map", temp.toString());
-        temp.setLength(0);
-        for (int i = 0; i < RowCount; i++)
-            for (int j = 0; j < ColumnCount; j++)
-                temp.append(CellToChar(TopMap[i][j]));
-        ed.putString("Top", temp.toString());
+        if (!GameState) {
+            ed.putInt("PlacedBoxCount", PlacedBoxCount);
+            ed.putInt("TotalBoxCount", TotalBoxCount);
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < RowCount; i++)
+                for (int j = 0; j < ColumnCount; j++)
+                    temp.append(CellToChar(CurrMap[i][j]));
+            ed.putString("Map", temp.toString());
+            temp.setLength(0);
+            for (int i = 0; i < RowCount; i++)
+                for (int j = 0; j < ColumnCount; j++)
+                    temp.append(CellToChar(TopMap[i][j]));
+            ed.putString("Top", temp.toString());
+        }
         ed.apply();
     }
 
@@ -500,31 +508,37 @@ public class GameWorldFragment extends Fragment implements View.OnTouchListener,
         SavePref();
         Switch swtch = (Switch) getActivity().findViewById(R.id.speech_command);
         swtch.setChecked(false);
-        mModel.setChangeResult(false);
         mModel.deleteObserver(this);
         super.onStop();
+    }
+
+
+    @Override
+    public void update(Observable observable, Object data) {
+        switch (mModel.getSpeechRecognitionResult()) {
+            case 0:
+                step(1, 0);
+                break;
+            case 1:
+                step(-1, 0);
+                break;
+            case 2:
+                step(0, -1);
+                break;
+            case 3:
+                step(0, 1);
+                break;
+            case 4:
+                if (btnCancel.isEnabled()) btnCancel.callOnClick();
+                break;
+            case 5:
+                btnMenu.callOnClick();
+                break;
+        }
     }
 
     @Override
     public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
     }
 
-    @Override
-    public void update(Observable observable, Object data) {
-
-        if(mModel.isChangeResult()){
-            mModel.setChangeResult(false);
-            switch (mModel.getSpeechRecognitionResult()){
-                case 0: step(1, 0);break;
-                   // Toast.makeText(getActivity(), "Направо", Toast.LENGTH_SHORT).show(); break;
-                case 1: step(-1, 0);break;
-                   // Toast.makeText(getActivity(), "Налево", Toast.LENGTH_SHORT).show(); break;
-                case 2: step(0, -1);break;
-                 //   Toast.makeText(getActivity(), "Вверх", Toast.LENGTH_SHORT).show(); break;
-                case 3: step(0, 1);break;
-                   // Toast.makeText(getActivity(), "Вниз", Toast.LENGTH_SHORT).show(); break;
-            }
-        }
-    }
 }
-
