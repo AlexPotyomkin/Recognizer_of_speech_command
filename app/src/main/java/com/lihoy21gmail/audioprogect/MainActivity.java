@@ -227,6 +227,7 @@ public class MainActivity extends Activity implements
         } else {
             recognizer = SpeechRecognizerSetup.defaultSetup()
                     .setAcousticModel(new File(assetsDir, "zero_ru.cd_ptm_4000"))
+                    //.setAcousticModel(new File(assetsDir, "cmusphinx-ru-5.2"))
                     .setDictionary(new File(assetsDir, "cmudict-ru-short.dic"))
                     .setBoolean("-allphone_ci", true)
                     .getRecognizer();
